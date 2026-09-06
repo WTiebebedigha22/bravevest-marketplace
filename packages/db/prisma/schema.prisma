@@ -1,0 +1,486 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  phone              String?             @unique
+  passwordHash       String
+  role               Role                @default(investor)
+  kycStatus          KycStatus           @default(pending)
+  isTwoFactorEnabled Boolean             @default(false)
+  twoFactorSecret    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  
+  kycRecords         KycRecord[]
+  investorProfile    InvestorProfile?
+  businessProfile    BusinessProfile?
+  borrowerProfile    BorrowerProfile?
+  wallets            Wallet[]
+  subscriptions      Subscription[]
+  cofundMemberships  CoFundMember[]
+  loanApplications   LoanApplication[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]          @relation("actor")
+  reviews            InvestmentCommitteeReview[] @relation("reviewer")
+  createdOpportunities Opportunity[]     @relation("sponsor")
+  
+  @@map("users")
+}
+
+model KycRecord {
+  id                    String            @id @default(cuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id])
+  bvn                   String?
+  nin                   String?
+  idDocumentUrl         String?
+  selfieUrl             String?
+  verificationProvider  String?
+  verificationRef       String?
+  status                KycStatus         @default(pending)
+  verifiedAt            DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  @@map("kyc_records")
+}
+
+model InvestorProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  nextOfKin         Json?
+  bankAccount       Json?
+  riskAcknowledgedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  subscriptions     Subscription[]
+  
+  @@map("investor_profiles")
+}
+
+model BusinessProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  entityName        String
+  registrationNo    String?
+  entityType        EntityType
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  cofundGroups      CoFundGroup[]
+  
+  @@map("business_profiles")
+}
+
+model BorrowerProfile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id])
+  businessName        String?
+  bvn                 String?
+  creditScore         Int?
+  incomeStatementUrl  String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  loanApplications    LoanApplication[]
+  
+  @@map("borrower_profiles")
+}
+
+model OpportunityCategory {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  opportunities Opportunity[]
+  feeRules      FeeRule[]
+  
+  @@map("opportunity_categories")
+}
+
+model Opportunity {
+  id                      String    @id @default(cuid())
+  categoryId              String
+  category                OpportunityCategory @relation(fields: [categoryId], references: [id])
+  title                   String
+  sponsorId               String?
+  sponsor                 User?     @relation("sponsor", fields: [sponsorId], references: [id])
+  targetRaise             Float
+  unitPrice               Float
+  totalUnits              Int
+  unitsSold               Int       @default(0)
+  minInvestment           Float
+  maxInvestment           Float?
+  tenureMonths            Int
+  projectedReturnPct      Float
+  riskRating              RiskRating @default(medium)
+  backingType             String?
+  useOfFunds              String?
+  status                  OpportunityStatus @default(draft)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  documents               OpportunityDocument[]
+  reviews                 InvestmentCommitteeReview[]
+  subscriptions           Subscription[]
+  fees                    Fee[]
+  
+  @@map("opportunities")
+}
+
+model OpportunityDocument {
+  id                String    @id @default(cuid())
+  opportunityId     String
+  opportunity       Opportunity @relation(fields: [opportunityId], references: [id])
+  docType           DocumentType
+  fileUrl           String
+  uploadedBy        String
+  createdAt         DateTime  @default(now())
+  
+  @@map("opportunity_documents")
+}
+
+model InvestmentCommitteeReview {
+  id              String    @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id])
+  reviewerId      String
+  reviewer        User      @relation("reviewer", fields: [reviewerId], references: [id])
+  decision        ReviewDecision
+  notes           String?
+  reviewedAt      DateTime  @default(now())
+  
+  @@map("investment_committee_reviews")
+}
+
+model Subscription {
+  id                String    @id @default(cuid())
+  investorId        String
+  investor          User      @relation(fields: [investorId], references: [id])
+  opportunityId     String
+  opportunity       Opportunity @relation(fields: [opportunityId], references: [id])
+  units             Int
+  amount            Float
+  status            SubscriptionStatus @default(pending)
+  agreementDocUrl   String?
+  subscribedAt      DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  payouts           Payout[]
+  
+  @@map("subscriptions")
+}
+
+model CoFundGroup {
+  id                String    @id @default(cuid())
+  name              String
+  leadInvestorId    String
+  leadInvestor      User      @relation(fields: [leadInvestorId], references: [id])
+  businessProfileId String?
+  businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id])
+  entityType        EntityType
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  members           CoFundMember[]
+  
+  @@map("cofund_groups")
+}
+
+model CoFundMember {
+  id                String    @id @default(cuid())
+  cofundGroupId     String
+  cofundGroup       CoFundGroup @relation(fields: [cofundGroupId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  contributionAmount Float
+  joinedAt          DateTime  @default(now())
+  
+  @@map("cofund_members")
+}
+
+model Wallet {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  balance           Float     @default(0)
+  currency          String    @default("NGN")
+  updatedAt         DateTime  @updatedAt
+  
+  transactions      WalletTransaction[]
+  
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id                  String    @id @default(cuid())
+  walletId            String
+  wallet              Wallet    @relation(fields: [walletId], references: [id])
+  type                TransactionType
+  amount              Float
+  reference           String    @unique
+  balanceAfter        Float
+  relatedEntityType   String?
+  relatedEntityId     String?
+  metadata            Json?
+  createdAt           DateTime  @default(now())
+  
+  @@map("wallet_transactions")
+}
+
+model Payout {
+  id                String    @id @default(cuid())
+  subscriptionId    String
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id])
+  scheduledDate     DateTime
+  amount            Float
+  status            PayoutStatus @default(scheduled)
+  paidAt            DateTime?
+  transactionRef    String?
+  
+  @@map("payouts")
+}
+
+model LoanApplication {
+  id                  String    @id @default(cuid())
+  borrowerId          String
+  borrower            User      @relation(fields: [borrowerId], references: [id])
+  productType         LoanProductType
+  requestedAmount     Float
+  tenureMonths        Int
+  purpose             String?
+  status              LoanStatus @default(submitted)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  creditAssessments   CreditAssessment[]
+  repayments          Repayment[]
+  fees                Fee[]
+  
+  @@map("loan_applications")
+}
+
+model CreditAssessment {
+  id                  String    @id @default(cuid())
+  loanApplicationId   String
+  loanApplication     LoanApplication @relation(fields: [loanApplicationId], references: [id])
+  bureauRef           String?
+  creditScore         Int?
+  dtiRatio            Float?
+  rawResponse         Json?
+  assessedAt          DateTime  @default(now())
+  
+  @@map("credit_assessments")
+}
+
+model Repayment {
+  id                  String    @id @default(cuid())
+  loanApplicationId   String
+  loanApplication     LoanApplication @relation(fields: [loanApplicationId], references: [id])
+  dueDate             DateTime
+  amount              Float
+  paidStatus          Boolean   @default(false)
+  paidAt              DateTime?
+  
+  @@map("repayments")
+}
+
+model Fee {
+  id                  String    @id @default(cuid())
+  opportunityId       String?
+  opportunity         Opportunity? @relation(fields: [opportunityId], references: [id])
+  loanApplicationId   String?
+  loanApplication     LoanApplication? @relation(fields: [loanApplicationId], references: [id])
+  feeType             FeeType
+  percentageOrAmount  Float
+  calculatedAmount    Float
+  chargedAt           DateTime  @default(now())
+  
+  @@map("fees")
+}
+
+model FeeRule {
+  id                  String    @id @default(cuid())
+  categoryId          String
+  category            OpportunityCategory @relation(fields: [categoryId], references: [id])
+  feeType             FeeType
+  calculationBasis    CalculationBasis
+  minPct              Float?
+  maxPct              Float?
+  appliesAt           FeeApplication
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  @@map("fee_rules")
+}
+
+model Notification {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  channel           NotificationChannel
+  template          String
+  payload           Json?
+  sentAt            DateTime  @default(now())
+  readAt            DateTime?
+  
+  @@map("notifications")
+}
+
+model AuditLog {
+  id                String    @id @default(cuid())
+  actorId           String
+  actor             User      @relation("actor", fields: [actorId], references: [id])
+  action            String
+  entity            String
+  entityId          String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  
+  @@map("audit_logs")
+}
+
+enum Role {
+  investor
+  borrower
+  admin
+  committee
+  support
+}
+
+enum KycStatus {
+  pending
+  verified
+  rejected
+}
+
+enum EntityType {
+  business
+  cooperative
+  association
+  diaspora_group
+}
+
+enum RiskRating {
+  low
+  medium
+  high
+}
+
+enum OpportunityStatus {
+  draft
+  under_review
+  listed
+  funding
+  funded
+  active
+  completed
+  defaulted
+}
+
+enum DocumentType {
+  memorandum
+  risk_disclosure
+  subscription_agreement
+  use_of_funds
+  return_projection
+  payment_schedule
+  exit_plan
+  site_photo
+  title_summary
+  valuation_report
+}
+
+enum ReviewDecision {
+  approve
+  reject
+  request_changes
+}
+
+enum SubscriptionStatus {
+  pending
+  active
+  matured
+  defaulted
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+  subscription
+  payout
+  fee
+}
+
+enum PayoutStatus {
+  scheduled
+  paid
+  failed
+}
+
+enum LoanProductType {
+  sme
+  salary_backed
+  asset_backed
+  working_capital
+  invoice
+  trade_finance
+}
+
+enum LoanStatus {
+  submitted
+  under_review
+  risk_rated
+  listed
+  funded
+  repaying
+  closed
+  defaulted
+}
+
+enum FeeType {
+  structuring
+  admin
+  project_management
+  performance
+  property_management
+  loan_origination
+  credit_assessment
+  transaction
+}
+
+enum CalculationBasis {
+  raise_amount
+  project_cost
+  rental_income
+  excess_profit
+}
+
+enum FeeApplication {
+  listing
+  monthly
+  payout
+  origination
+}
+
+enum NotificationChannel {
+  email
+  sms
+  whatsapp
+  push
+  dashboard
+}

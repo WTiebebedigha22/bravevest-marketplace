@@ -1,0 +1,29 @@
+{
+  "name": "@bravevest/validation",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js"
+    },
+    "./kyc": {
+      "import": "./src/kyc.schema.js"
+    },
+    "./subscription": {
+      "import": "./src/subscription.schema.js"
+    },
+    "./loan": {
+      "import": "./src/loanApplication.schema.js"
+    },
+    "./opportunity": {
+      "import": "./src/opportunity.schema.js"
+    },
+    "./wallet": {
+      "import": "./src/wallet.schema.js"
+    }
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  }
+}
