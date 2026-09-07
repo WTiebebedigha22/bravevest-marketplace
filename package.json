@@ -6,11 +6,16 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "clean": "turbo clean",
-    "format": "prettier --write \"**/*.{js,jsx,md}\""
+    "format": "prettier --write \"**/*.{js,jsx,md}\"",
+    "db:generate": "pnpm --filter @bravevest/db db:generate",
+    "db:push": "pnpm --filter @bravevest/db db:push",
+    "db:migrate": "pnpm --filter @bravevest/db db:migrate",
+    "db:studio": "pnpm --filter @bravevest/db db:studio"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "prettier": "^3.0.0"
+    "dotenv-cli": "^11.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0"
   },
   "packageManager": "pnpm@8.15.0",
   "engines": {
