@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { PrismaModule } from './prisma/prisma.module';
+import { FirebaseModule } from './firebase/firebase.module';
 import { EmailModule } from './email/email.module';
 
 @Module({
@@ -23,7 +23,7 @@ import { EmailModule } from './email/email.module';
       }),
       inject: [ConfigService],
     }),
-    PrismaModule,
+    FirebaseModule,
     AuthModule,
     UserModule,
     EmailModule,

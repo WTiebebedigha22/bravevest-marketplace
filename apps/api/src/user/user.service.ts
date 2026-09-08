@@ -1,48 +1,24 @@
-// apps/api/src/user/user.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly firebase: FirebaseService) {}
 
   async findById(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        wallets: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    const snapshot = await this.firebase.getFirestore().collection('users').doc(id).get();
+    if (!snapshot.exists) throw new NotFoundException('User not found');
+    return { id: snapshot.id, ...snapshot.data() };
   }
 
-  async updateProfile(id: string, data: any) {
-    const user = await this.prisma.user.update({
-      where: { id },
-      data,
-    });
-
-    return user;
+  async updateProfile(id: string, data: Record<string, unknown>) {
+    const profile = await this.firebase.getFirestore().collection('users').doc(id);
+    if (!(await profile.get()).exists) throw new NotFoundException('User not found');
+    await profile.update({ ...data, updatedAt: this.firebase.serverTimestamp() });
+    return this.findById(id);
   }
 
   async getInvestorProfile(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        wallets: true,
-        subscriptions: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    return this.findById(id);
   }
 }

@@ -31,28 +31,28 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const response = await apiClient.post('/auth/login', { email, password });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-      setUser(response.data.user);
-      return response.data;
+    if (response.accessToken) {
+      localStorage.setItem('token', response.accessToken);
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.accessToken}`;
+      setUser(response.user);
+      return response;
     }
-    return response.data;
+    return response;
   };
 
   const register = async (data) => {
     const response = await apiClient.post('/auth/register', data);
-    return response.data;
+    return response;
   };
 
   const verify2FA = async (code) => {
     const response = await apiClient.post('/auth/2fa/verify', { code });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-      setUser(response.data.user);
+    if (response.accessToken) {
+      localStorage.setItem('token', response.accessToken);
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.accessToken}`;
+      setUser(response.user);
     }
-    return response.data;
+    return response;
   };
 
   const logout = () => {

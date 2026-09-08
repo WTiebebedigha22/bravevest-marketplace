@@ -1,226 +1,133 @@
-// apps/api/src/auth/auth.service.ts
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto, UserRole, AccountType } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { TwoFactorService } from './two-factor.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { EmailService } from '../email/email.service';
+import { TwoFactorService } from './two-factor.service';
+import { RegisterDto, UserRole } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private twoFactorService: TwoFactorService,
-    private emailService: EmailService,
+    private readonly firebase: FirebaseService,
+    private readonly config: ConfigService,
+    private readonly twoFactor: TwoFactorService,
+    private readonly email: EmailService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    // Check if user exists
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: registerDto.email },
-          { phone: registerDto.phone },
-        ],
-      },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('User with this email or phone already exists');
+  async register(dto: RegisterDto) {
+    if (await this.findProfileByEmail(dto.email)) {
+      throw new ConflictException('User with this email already exists');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email: registerDto.email,
-        phone: registerDto.phone,
-        passwordHash: hashedPassword,
-        role: registerDto.role || UserRole.INVESTOR,
-        accountType: registerDto.accountType,
-        firstName: registerDto.firstName,
-        lastName: registerDto.lastName,
-        dateOfBirth: registerDto.dateOfBirth ? new Date(registerDto.dateOfBirth) : null,
-        businessName: registerDto.businessName,
-        businessRegistrationNumber: registerDto.businessRegistrationNumber,
-        businessType: registerDto.businessType,
-        businessIndustry: registerDto.businessIndustry,
-        businessAddress: registerDto.businessAddress,
-        yearsInOperation: registerDto.yearsInOperation ? parseInt(registerDto.yearsInOperation) : null,
-        nationality: registerDto.nationality,
-        countryOfResidence: registerDto.countryOfResidence,
-        investorType: registerDto.investorType,
-        city: registerDto.city,
-        address: registerDto.address,
-        referralCode: registerDto.referralCode,
-        investmentExperience: registerDto.investmentExperience,
-        riskTolerance: registerDto.riskTolerance,
-        investmentGoals: registerDto.investmentGoals || [],
-        preferredSectors: registerDto.preferredSectors || [],
-        taxId: registerDto.taxId,
-        isPEP: registerDto.isPEP || false,
-        wallets: {
-          create: {
-            currency: 'NGN',
-            balance: 0,
-          },
-        },
-      },
+    const authUser = await this.firebase.getAuth().createUser({
+      email: dto.email,
+      password: dto.password,
+      displayName: [dto.firstName, dto.lastName].filter(Boolean).join(' ') || undefined,
+    });
+    const { secret, otpauthUrl } = this.twoFactor.generateSecret(dto.email);
+    const profile = this.clean({
+      email: dto.email,
+      phone: dto.phone,
+      role: dto.role || UserRole.INVESTOR,
+      accountType: dto.accountType,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      dateOfBirth: dto.dateOfBirth,
+      businessName: dto.businessName,
+      businessRegistrationNumber: dto.businessRegistrationNumber,
+      businessType: dto.businessType,
+      businessIndustry: dto.businessIndustry,
+      businessAddress: dto.businessAddress,
+      yearsInOperation: dto.yearsInOperation ? Number(dto.yearsInOperation) : undefined,
+      nationality: dto.nationality,
+      countryOfResidence: dto.countryOfResidence,
+      investorType: dto.investorType,
+      city: dto.city,
+      address: dto.address,
+      referralCode: dto.referralCode,
+      investmentExperience: dto.investmentExperience,
+      riskTolerance: dto.riskTolerance,
+      investmentGoals: dto.investmentGoals || [],
+      preferredSectors: dto.preferredSectors || [],
+      taxId: dto.taxId,
+      isPEP: dto.isPEP || false,
+      isTwoFactorEnabled: false,
+      twoFactorSecret: secret,
+      kycStatus: 'pending',
+      wallets: [{ balance: 0, currency: 'NGN' }],
+      createdAt: this.firebase.serverTimestamp(),
     });
 
-    // Generate 2FA secret
-    const { secret, otpauthUrl } = this.twoFactorService.generateSecret(user.email);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        twoFactorSecret: secret,
-      },
-    });
-
-    // Send welcome email
-    await this.emailService.sendWelcomeEmail(user.email, user.firstName || 'Investor');
-
-    const tokens = this.generateTokens(user.id, user.email, user.role);
+    await this.firebase.getFirestore().collection('users').doc(authUser.uid).set(profile);
+    await this.email.sendWelcomeEmail(dto.email, dto.firstName || 'Investor');
 
     return {
-      user: this.sanitizeUser(user),
-      ...tokens,
-      twoFactor: {
-        secret,
-        otpauthUrl,
-      },
+      user: this.sanitize({ id: authUser.uid, ...profile }),
+      twoFactor: { secret, otpauthUrl },
     };
   }
 
-  async login(loginDto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email },
+  async login(dto: LoginDto) {
+    const apiKey = this.config.get<string>('FIREBASE_WEB_API_KEY');
+    if (!apiKey) throw new BadRequestException('FIREBASE_WEB_API_KEY is not configured');
+
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: dto.email, password: dto.password, returnSecureToken: true }),
     });
+    if (!response.ok) throw new UnauthorizedException('Invalid credentials');
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (user.isTwoFactorEnabled) {
-      return {
-        requires2FA: true,
-        userId: user.id,
-        message: '2FA verification required',
-      };
-    }
-
-    const tokens = this.generateTokens(user.id, user.email, user.role);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
-    return {
-      user: this.sanitizeUser(user),
-      ...tokens,
-    };
+    const result = await response.json() as { localId: string; idToken: string; refreshToken: string };
+    const profile = await this.getProfile(result.localId);
+    if (profile.isTwoFactorEnabled) return { requires2FA: true, userId: result.localId };
+    return { user: profile, accessToken: result.idToken, refreshToken: result.refreshToken };
   }
 
   async verify2FA(userId: string, code: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    const isValid = this.twoFactorService.verifySecret(user.twoFactorSecret, code);
-    if (!isValid) {
+    const profile = await this.getProfile(userId);
+    if (!this.twoFactor.verifySecret(profile.twoFactorSecret, code)) {
       throw new BadRequestException('Invalid 2FA code');
     }
-
-    if (!user.isTwoFactorEnabled) {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { isTwoFactorEnabled: true },
-      });
-    }
-
-    const tokens = this.generateTokens(user.id, user.email, user.role);
-
-    return {
-      user: this.sanitizeUser(user),
-      ...tokens,
-    };
+    await this.firebase.getFirestore().collection('users').doc(userId).update({ isTwoFactorEnabled: true });
+    return { user: this.sanitize({ ...profile, isTwoFactorEnabled: true }) };
   }
 
   async refreshToken(refreshToken: string) {
-    try {
-      const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      });
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      const tokens = this.generateTokens(user.id, user.email, user.role);
-      return tokens;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    const apiKey = this.config.get<string>('FIREBASE_WEB_API_KEY');
+    if (!apiKey) throw new BadRequestException('FIREBASE_WEB_API_KEY is not configured');
+    const response = await fetch(`https://securetoken.googleapis.com/v1/token?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
+    });
+    if (!response.ok) throw new UnauthorizedException('Invalid refresh token');
+    const result = await response.json() as { id_token: string; refresh_token: string };
+    return { accessToken: result.id_token, refreshToken: result.refresh_token };
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        wallets: true,
-      },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return this.sanitizeUser(user);
+    const snapshot = await this.firebase.getFirestore().collection('users').doc(userId).get();
+    if (!snapshot.exists) throw new UnauthorizedException('User not found');
+    return this.sanitize({ id: snapshot.id, ...snapshot.data() });
   }
 
-  async logout(userId: string) {
+  async logout(_userId: string) {
     return { success: true };
   }
 
-  private generateTokens(userId: string, email: string, role: string) {
-    const payload = { sub: userId, email, role };
-    
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-      expiresIn: '30d',
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+  private async findProfileByEmail(email: string) {
+    const snapshot = await this.firebase.getFirestore().collection('users').where('email', '==', email).limit(1).get();
+    return snapshot.empty ? null : snapshot.docs[0].data();
   }
 
-  private sanitizeUser(user: any) {
-    const { passwordHash, twoFactorSecret, ...result } = user;
-    return result;
+  private sanitize(user: any) {
+    const { twoFactorSecret, passwordHash, ...safeUser } = user;
+    return safeUser;
+  }
+
+  private clean(data: Record<string, unknown>) {
+    return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
   }
 }

@@ -297,17 +297,6 @@ export default function RegisterPage() {
           return false;
         }
       }
-      if (!formData.city || !formData.address) {
-        setError('Please enter your city and address');
-        return false;
-      }
-    }
-
-    if (step === 3) {
-      if (formData.investmentGoals.length === 0) {
-        setError('Please select at least one investment goal');
-        return false;
-      }
     }
 
     if (step === 4) {
@@ -315,6 +304,9 @@ export default function RegisterPage() {
         setError('You must accept the Terms of Service');
         return false;
       }
+    }
+
+    if (step === 5) {
       if (!formData.acceptedPrivacyPolicy) {
         setError('You must accept the Privacy Policy');
         return false;
@@ -925,6 +917,19 @@ export default function RegisterPage() {
         </div>
       </div>
 
+      <label className="flex items-start gap-3 p-4 border-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+        <input
+          type="checkbox"
+          checked={formData.acceptedTerms}
+          onChange={(e) => handleChange('acceptedTerms', e.target.checked)}
+          className="mt-1 h-4 w-4 text-brave-teal rounded border-gray-300 focus:ring-brave-teal"
+        />
+        <div>
+          <div className="font-medium">Terms of Service</div>
+          <div className="text-sm text-gray-500">Accept our Terms of Service and User Agreement</div>
+        </div>
+      </label>
+
       {error && (
         <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-xl border border-red-200">
           <AlertCircle className="h-4 w-4" />
@@ -961,19 +966,6 @@ export default function RegisterPage() {
       </div>
 
       <div className="space-y-3">
-        <label className="flex items-start gap-3 p-4 border-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-          <input
-            type="checkbox"
-            checked={formData.acceptedTerms}
-            onChange={(e) => handleChange('acceptedTerms', e.target.checked)}
-            className="mt-1 h-4 w-4 text-brave-teal rounded border-gray-300 focus:ring-brave-teal"
-          />
-          <div>
-            <div className="font-medium">Terms of Service</div>
-            <div className="text-sm text-gray-500">Accept our Terms of Service and User Agreement</div>
-          </div>
-        </label>
-
         <label className="flex items-start gap-3 p-4 border-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
           <input
             type="checkbox"
