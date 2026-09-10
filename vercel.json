@@ -6,7 +6,7 @@
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|api/).*)",
       "destination": "/"
     }
   ]

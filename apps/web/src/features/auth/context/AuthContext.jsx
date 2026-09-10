@@ -10,6 +10,7 @@ import { apiClient } from '@/lib/apiClient';
 import { auth } from '@/lib/firebase';
 
 const AuthContext = createContext();
+const apiBaseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : '');
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -45,6 +46,22 @@ export function AuthProvider({ children }) {
   const syncUser = async (firebaseUser, profile = {}) => {
     const token = await firebaseUser.getIdToken();
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    if (!apiBaseUrl) {
+      const localUser = {
+        id: firebaseUser.uid,
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+        firstName: profile.firstName || firebaseUser.displayName?.split(' ')[0],
+        lastName: profile.lastName || firebaseUser.displayName?.split(' ').slice(1).join(' '),
+        role: profile.role || 'investor',
+        accountType: profile.accountType || 'individual',
+        kycStatus: 'pending',
+      };
+      setUser(localUser);
+      return localUser;
+    }
+
     const response = await apiClient.post('/auth/firebase/sync', {
       email: firebaseUser.email,
       firstName: firebaseUser.displayName?.split(' ')[0],
