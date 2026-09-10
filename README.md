@@ -75,6 +75,17 @@ Firebase Authentication is the shared identity provider for the web app and API.
 
 Copy `apps/api/.env.example` to `apps/api/.env` and provide either the three Firebase service-account values (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`) or `GOOGLE_APPLICATION_CREDENTIALS` pointing to a service-account JSON file. After adding `firebaseUid` to the database, run `pnpm run db:push`. Send Firebase client tokens as `Authorization: Bearer <id-token>` when calling the API directly.
 
+### Vercel API deployment
+
+The Vercel deployment includes `api/index.ts`, which adapts NestJS to Vercel's serverless request/response runtime. Configure these Vercel environment variables before deploying:
+
+- `DATABASE_URL`: a reachable hosted PostgreSQL connection string; do not use `localhost`.
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`: Firebase Admin credentials.
+- `FRONTEND_URL`: the deployed web URL.
+- `JWT_SECRET` and `JWT_REFRESH_SECRET`: production secrets.
+
+Run `pnpm run db:push` against the hosted database before the first request. A `FUNCTION_INVOCATION_FAILED` response usually means the function crashed during initialization, commonly because `DATABASE_URL` is unreachable or a required environment variable is missing.
+
 ## License
 
 Proprietary

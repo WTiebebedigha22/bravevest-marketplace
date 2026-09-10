@@ -4,6 +4,12 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @bravevest/web build",
   "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs22.x",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!assets/|api/).*)",
