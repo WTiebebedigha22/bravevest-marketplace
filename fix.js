@@ -4,6 +4,8 @@ const path = require('path');
 
 const rootDir = process.cwd();
 
+fs.mkdirSync(path.join(rootDir, 'apps/api/src'), { recursive: true });
+
 console.log('🚀 Building BraveVest Backend API...\n');
 
 // ============================================
@@ -20,7 +22,7 @@ const apiPackageJson = `{
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \\\"{src,apps,libs,test}/**/*.ts\\\" --fix",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -1395,11 +1397,13 @@ enum PayoutStatus {
   failed
 }`;
 
-fs.writeFileSync(
-  path.join(rootDir, 'packages/db/prisma/schema.prisma'),
-  prismaSchema
-);
-console.log('  ✅ Updated: Prisma schema');
+const prismaSchemaPath = path.join(rootDir, 'packages/db/prisma/schema.prisma');
+if (!fs.existsSync(prismaSchemaPath)) {
+  fs.writeFileSync(prismaSchemaPath, prismaSchema);
+  console.log('  ✅ Created: Prisma schema');
+} else {
+  console.log('  ℹ️ Preserved existing Prisma schema');
+}
 
 // ============================================
 // 18. CREATE DECORATORS

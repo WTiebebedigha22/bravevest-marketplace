@@ -1,0 +1,145 @@
+type User @table {
+  firebaseUid: String! @unique
+  email: String!
+  phone: String
+  role: String!
+  accountType: String
+  firstName: String
+  lastName: String
+  dateOfBirth: Timestamp
+  nationality: String
+  countryOfResidence: String
+  city: String
+  address: String
+  businessName: String
+  businessRegistrationNumber: String
+  businessType: String
+  businessIndustry: String
+  businessAddress: String
+  yearsInOperation: Int
+  investorType: String
+  investmentExperience: String
+  riskTolerance: String
+  investmentGoals: [String]
+  preferredSectors: [String]
+  taxId: String
+  isPEP: Boolean
+  kycStatus: String
+  kycVerifiedAt: Timestamp
+  kycProvider: String
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type KycDocument @table {
+  user: User!
+  type: String!
+  storagePath: String!
+  status: String!
+  reviewNote: String
+  expiresAt: Timestamp
+  reviewedAt: Timestamp
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type LoanApplication @table {
+  borrower: User!
+  requestedAmount: Float!
+  purpose: String!
+  businessSummary: String
+  status: String!
+  reviewNote: String
+  reviewedAt: Timestamp
+  opportunityId: UUID
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type Opportunity @table {
+  sponsor: User!
+  loanApplication: LoanApplication
+  title: String!
+  description: String!
+  targetRaise: Float!
+  fundedAmount: Float!
+  unitPrice: Float!
+  totalUnits: Int!
+  minInvestment: Float!
+  maxInvestment: Float
+  tenureMonths: Int!
+  interestRate: Float!
+  projectedReturnPct: Float!
+  riskRating: String!
+  status: String!
+  fundingDeadline: Timestamp!
+  maturityDate: Timestamp!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type OpportunityDocument @table {
+  opportunity: Opportunity!
+  type: String!
+  storagePath: String!
+  createdAt: Timestamp!
+}
+
+type Repayment @table {
+  opportunity: Opportunity!
+  installmentNo: Int!
+  dueDate: Timestamp!
+  principalAmount: Float!
+  interestAmount: Float!
+  amountPaid: Float!
+  status: String!
+  paidAt: Timestamp
+  createdAt: Timestamp!
+}
+
+type Wallet @table {
+  user: User!
+  balance: Float!
+  currency: String!
+  updatedAt: Timestamp!
+}
+
+type Transaction @table {
+  wallet: Wallet!
+  type: String!
+  amount: Float!
+  reference: String!
+  balanceAfter: Float!
+  relatedEntityType: String
+  relatedEntityId: UUID
+  createdAt: Timestamp!
+}
+
+type InvestmentSubscription @table(key: ["investor", "opportunity"]) {
+  investor: User!
+  opportunity: Opportunity!
+  units: Int!
+  amount: Float!
+  status: String!
+  agreementStoragePath: String
+  subscribedAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type Payout @table {
+  # Explicitly naming the foreign key constraint to keep it under 64 characters
+  investmentSubscription: InvestmentSubscription! @ref(constraintName: "payout_sub_fkey")
+  scheduledDate: Timestamp!
+  amount: Float!
+  status: String!
+  paidAt: Timestamp
+  transactionRef: String
+}
+
+type AuditLog @table {
+  actor: User!
+  action: String!
+  entity: String!
+  entityId: UUID!
+  createdAt: Timestamp!
+}

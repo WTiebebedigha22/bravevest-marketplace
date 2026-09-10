@@ -69,6 +69,12 @@ bravevest/
 
 See `.env.example` for required environment variables.
 
+### Firebase Admin
+
+Firebase Authentication is the shared identity provider for the web app and API. The web app uses Firebase Email/Password authentication, then synchronizes the profile through `POST /auth/firebase/sync`. Protected API routes verify the Firebase ID token and use the synchronized Prisma user.
+
+Copy `apps/api/.env.example` to `apps/api/.env` and provide either the three Firebase service-account values (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`) or `GOOGLE_APPLICATION_CREDENTIALS` pointing to a service-account JSON file. After adding `firebaseUid` to the database, run `pnpm run db:push`. Send Firebase client tokens as `Authorization: Bearer <id-token>` when calling the API directly.
+
 ## License
 
 Proprietary

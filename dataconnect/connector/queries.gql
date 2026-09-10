@@ -1,0 +1,30 @@
+query listProducts @auth(level: PUBLIC) {
+  opportunities(
+    where: { status: { eq: "listed" } }
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    title
+    description
+    targetRaise
+    fundedAmount
+    unitPrice
+    totalUnits
+    minInvestment
+    maxInvestment
+    tenureMonths
+    interestRate
+    projectedReturnPct
+    riskRating
+    status
+    fundingDeadline
+    maturityDate
+    createdAt
+    sponsor {
+      firebaseUid
+      firstName
+      lastName
+      businessName
+    }
+  }
+}

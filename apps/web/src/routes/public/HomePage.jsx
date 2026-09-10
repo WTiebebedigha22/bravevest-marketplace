@@ -1,222 +1,248 @@
-// apps/web/src/routes/public/HomePage.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ChevronDown,
-  ShieldCheck,
-  FileCheck2,
-  Users,
+  Check,
+  ChevronRight,
   PenLine,
   Search,
   Wallet,
-  TrendingUp,
-  Building2,
-  Home,
-  Coins,
-  Sparkles,
-  ArrowRight,
-  CheckCircle,
   Clock,
+  CheckCircle,
+  ShieldCheck,
+  Lock,
+  Users,
   Award,
-  Globe,
-  Zap
+  ArrowRight
 } from 'lucide-react';
 
 const STATS_BY_YEAR = [
-  { year: '2021-22', value: 8.5, label: '₦8.5B' },
-  { year: '2022-23', value: 18, label: '₦18B' },
-  { year: '2023-24', value: 32, label: '₦32B' },
-  { year: '2024-25', value: 50, label: '₦50B', highlight: true },
+  { year: '2021-22', value: 18.5, label: '₦18.5M', color: '#FFFFFF', border: true },
+  { year: '2022-23', value: 32, label: '₦32M', color: '#F1E8FB' },
+  { year: '2023-24', value: 55.3, label: '₦55.3M', color: '#D4B8FB' },
+  { year: '2024-25', value: 78.6, label: '₦78.6M', color: '#B3D941', highlight: true },
 ];
 
-const opportunities = [
-  { 
-    title: 'Green Energy Infrastructure Fund',
-    category: 'Projects',
-    return: '18%',
-    tenure: '24 months',
-    minInvestment: '₦50,000',
-    risk: 'Medium',
-    raised: '62%',
-    icon: TrendingUp,
-    color: 'from-green-400 to-green-600'
+const STEPS = [
+  {
+    step: 1,
+    title: 'Enter\nYour Details',
+    shortDesc: 'Enter your complete detail information to get hassle-free process.',
+    icon: PenLine,
+    bgColor: 'bg-[#3FB8C4]',
+    textColor: 'text-white',
+    accentColor: 'bg-white/20',
+    details: [
+      'Free registration with email or phone',
+      'Choose investor or borrower role',
+      'Set your investment preferences',
+      '2FA security enabled by default'
+    ]
   },
-  { 
-    title: 'Luxury Apartment Development',
-    category: 'Property',
-    return: '22%',
-    tenure: '36 months',
-    minInvestment: '₦250,000',
-    risk: 'Low',
-    raised: '45%',
-    icon: Home,
-    color: 'from-blue-400 to-blue-600'
+  {
+    step: 2,
+    title: 'Finding\nThe Right Loans',
+    shortDesc: 'Finding the right amount parameters tailored to your financial goals.',
+    icon: Search,
+    bgColor: 'bg-[#C9A6F2]',
+    textColor: 'text-black',
+    accentColor: 'bg-white/40',
+    details: [
+      'Filter by category, risk, and return',
+      'View detailed investment metrics',
+      'Calculate projected returns',
+      'Instant AI-powered matching'
+    ]
   },
-  { 
-    title: 'AgriTech Innovation Fund',
-    category: 'Projects',
-    return: '15%',
-    tenure: '18 months',
-    minInvestment: '₦25,000',
-    risk: 'Medium',
-    raised: '78%',
-    icon: Building2,
-    color: 'from-amber-400 to-amber-600'
-  },
-  { 
-    title: 'Real Estate Income Notes',
-    category: 'Income',
-    return: '12%',
-    tenure: '12 months',
-    minInvestment: '₦100,000',
-    risk: 'Low',
-    raised: '90%',
-    icon: Coins,
-    color: 'from-purple-400 to-purple-600'
-  },
+  {
+    step: 3,
+    title: 'Payment\nOptions',
+    shortDesc: 'Flexible payment options with schedule tailored for you.',
+    icon: Wallet,
+    bgColor: 'bg-[#B3D941]',
+    textColor: 'text-black',
+    accentColor: 'bg-black/10',
+    details: [
+      'Bank transfers (Instant settlement)',
+      'Card payments (Visa/Mastercard)',
+      'Automated payout schedules',
+      'Multi-currency support'
+    ]
+  }
 ];
+
+// Stock images from Unsplash (free to use, hotlink-friendly)
+const STOCK_IMAGES = {
+  businessLoan:
+    'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80',
+  personalLoan:
+    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80',
+};
 
 export default function HomePage() {
-  const [amount, setAmount] = useState(2500000);
-  const min = 100000;
-  const max = 10000000;
-  const pct = ((amount - min) / (max - min)) * 100;
-  const formatNaira = (n) => `₦${n.toLocaleString('en-NG')}`;
+  const [amount, setAmount] = useState(7500000);
+  const [expandedStep, setExpandedStep] = useState(null);
+  const min = 500000;
+  const max = 50000000;
+
+  const toggleStep = (stepNumber) => {
+    setExpandedStep(expandedStep === stepNumber ? null : stepNumber);
+  };
+
+  const formatNairaShort = (num) => {
+    if (num >= 1000000) {
+      return `₦${(num / 1000000).toLocaleString('en-NG')}M`;
+    }
+    return `₦${(num / 1000).toLocaleString('en-NG')}K`;
+  };
 
   return (
-    <div className="bg-white font-sans" style={{ color: '#111111' }}>
+    <div className="bg-white text-[#0F0F10] font-sans antialiased selection:bg-[#B3D941] selection:text-black">
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden pt-10 pb-20 md:pb-28">
+        {/* Soft Ambient Radial Background Blur */}
         <div
-          className="absolute -top-24 -right-24 w-3/4 h-96 rounded-full blur-3xl opacity-70 pointer-events-none"
-          style={{ background: 'linear-gradient(120deg, #BFE6B0 0%, #CFC3EE 45%, #F3CBDC 100%)' }}
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] blur-3xl opacity-60 pointer-events-none rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(179,217,65,0.35) 0%, rgba(201,166,242,0.3) 45%, rgba(255,255,255,0) 75%)',
+          }}
         />
-        <div className="relative max-w-6xl mx-auto px-6 md:px-10 pt-10 pb-20 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-brave-teal/10 text-brave-teal px-3 py-1 rounded-full text-xs font-medium mb-4">
-              <Sparkles className="h-3 w-3" />
-              Trusted by 10,000+ investors
-            </div>
-            <h1 className="font-serif font-light text-5xl md:text-6xl leading-tight mb-6">
-              Regulated Access
-              <br />to Real Investments.
+
+        <div className="relative max-w-6xl mx-auto px-6 md:px-10 grid md:grid-cols-12 gap-12 items-center">
+          {/* Left Text Column */}
+          <div className="md:col-span-7">
+            <h1 className="font-serif font-medium text-6xl md:text-7xl lg:text-[82px] leading-[1.04] tracking-tight mb-6 text-black">
+              Completely
+              <br />
+              Hassle-Free
+              <br />
+              Process.
             </h1>
-            <p className="text-base leading-relaxed mb-8 max-w-md" style={{ color: '#5B5B5B' }}>
-              Property, projects, income and group opportunities — every listing verified
-              and every return tracked, in one platform built for Africa.
+
+            <p className="text-sm md:text-base leading-relaxed mb-8 max-w-md text-gray-700 font-medium">
+              Loan products and the competition for new customers is fierce — finding the right loan can seem difficult.
             </p>
-            <div className="flex flex-wrap gap-3 mb-8">
+
+            <div className="flex flex-wrap items-center gap-4 mb-8">
               <Link to="/register">
-                <button className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-black/90 transition-colors">
-                  Start Investing
+                <button className="bg-black text-white px-7 py-3.5 rounded-full text-xs font-semibold hover:bg-black/90 transition-all shadow-sm">
+                  Get Started
                 </button>
               </Link>
+
               <Link to="/opportunities">
-                <button className="border px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors" style={{ borderColor: '#111111' }}>
-                  Browse Opportunities
+                <button className="border border-gray-300 text-black px-6 py-3.5 rounded-full text-xs font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2">
+                  Chat With Experts
+                  <ChevronRight className="w-4 h-4 text-gray-500" />
                 </button>
               </Link>
             </div>
-            <div className="flex flex-wrap gap-6 text-sm" style={{ color: '#333333' }}>
-              <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-brave-teal" /> SEC Compliant</span>
-              <span className="flex items-center gap-1.5"><FileCheck2 className="w-4 h-4 text-brave-teal" /> Fully Verified</span>
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-brave-teal" /> 10K+ Investors</span>
+
+            <div className="flex flex-wrap gap-6 text-xs text-gray-700 font-bold">
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-black stroke-[3]" /> Safe and Secure
+              </span>
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-black stroke-[3]" /> No Document Hassled
+              </span>
             </div>
           </div>
 
-          {/* Slider card */}
-          <div
-            className="bg-white rounded-3xl p-7 max-w-sm w-full md:ml-auto"
-            style={{ boxShadow: '0 20px 60px -15px rgba(0,0,0,0.18)' }}
-          >
-            <p className="text-xs mb-4 flex items-center gap-1.5" style={{ color: '#8A8A8A' }}>
-              <span className="w-4 h-4 inline-block rounded-full border" style={{ borderColor: '#8A8A8A' }} />
-              Calculate Your Returns
-            </p>
-            <p className="text-xs mb-1" style={{ color: '#8A8A8A' }}>Investment Amount</p>
-            <p className="text-3xl font-semibold mb-6">{formatNaira(amount)}</p>
-
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step={50000}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer mb-2"
-              style={{ background: `linear-gradient(90deg, #7FD0A8 0%, #8FB6E8 ${pct}%, #E9E9E9 ${pct}%)` }}
-            />
-            <div className="flex justify-between text-xs mb-6" style={{ color: '#9A9A9A' }}>
-              <span>₦100,000</span>
-              <span>₦10,000,000</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-xs mb-4" style={{ color: '#8A8A8A' }}>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <div className="font-semibold text-brave-teal">18%</div>
-                <div>Projected Return</div>
+          {/* Right Floating Interactive Loan Calculator Card */}
+          <div className="md:col-span-5 flex justify-center md:justify-end">
+            <div
+              className="bg-white rounded-[28px] p-7 w-full max-w-sm border border-gray-100"
+              style={{ boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.12)' }}
+            >
+              <div className="flex items-center justify-between text-[11px] text-gray-600 font-semibold mb-5">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full border border-gray-400" />
+                  Compare The Banks Interest Rates
+                </span>
               </div>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <div className="font-semibold text-brave-teal">24mo</div>
-                <div>Tenure</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <div className="font-semibold text-brave-teal">₦50K</div>
-                <div>Min Investment</div>
-              </div>
-            </div>
 
-            <Link to="/register">
-              <button className="w-full bg-black text-white py-3 rounded-full text-sm font-medium hover:bg-black/90 transition-colors mb-4">
-                Start Now
-              </button>
-            </Link>
+              <div className="text-center mb-6">
+                <p className="text-xs text-gray-500 mb-1 font-semibold">Select Loan Amount</p>
+                <p className="text-3xl font-extrabold tracking-tight text-black">
+                  NGN ₦{amount.toLocaleString('en-NG')}
+                </p>
+              </div>
 
-            <div className="flex justify-between text-xs" style={{ color: '#8A8A8A' }}>
-              <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> 10,000+ Investors</span>
-              <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Safe &amp; Regulated</span>
+              {/* Multi-colored Gradient Progress Bar */}
+              <div className="relative mb-2">
+                <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-[#B3D941] opacity-90" />
+              </div>
+
+              <div className="flex justify-between text-[10px] text-gray-600 font-bold mb-6">
+                <span>{formatNairaShort(min)}</span>
+                <span>{formatNairaShort(max)}</span>
+              </div>
+
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={500000}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black mb-6"
+              />
+
+              <Link to="/register">
+                <button className="w-full bg-black text-white py-3.5 rounded-full text-xs font-bold hover:bg-black/90 transition-colors mb-4">
+                  Start Now
+                </button>
+              </Link>
+
+              <div className="flex justify-between items-center text-[11px] text-gray-600 font-semibold px-1">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-gray-500" /> 20 Mins In Bank
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5 text-gray-500" /> Quick And Easy Booking
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats / bar chart */}
-      <section className="py-16 md:py-20" style={{ borderTop: '1px solid #EFEFEF' }}>
-        <div className="max-w-6xl mx-auto px-6 md:px-10 grid md:grid-cols-2 gap-10 items-end">
-          <div>
-            <h2 className="font-serif font-light text-3xl md:text-4xl mb-2 leading-tight">
-              Capital Deployed
-              <br />Till Date —
-            </h2>
-            <p className="text-sm mb-6" style={{ color: '#8A8A8A' }}>Cumulative investment volume, by year</p>
-            <p className="font-serif text-5xl md:text-6xl">₦50B+</p>
-            <div className="flex gap-4 mt-4">
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 rounded-full" style={{ background: '#A9E24B' }}></div>
-                <span style={{ color: '#8A8A8A' }}>Current Year</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 rounded-full" style={{ background: '#F1EFF6' }}></div>
-                <span style={{ color: '#8A8A8A' }}>Previous Years</span>
-              </div>
+      {/* Stats Bar Chart Section */}
+      <section className="py-16 md:py-24 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 md:px-10">
+          <div className="grid md:grid-cols-12 gap-8 items-start mb-12">
+            <div className="md:col-span-5">
+              <h2 className="font-serif font-medium text-4xl md:text-5xl leading-tight mb-3 text-black">
+                Loan Success Till
+                <br />
+                Today —
+              </h2>
+              <p className="text-xs text-gray-500 font-semibold">Some previous stats of Growth / Year</p>
+            </div>
+            <div className="md:col-span-7 flex md:justify-end items-baseline">
+              <span className="font-serif font-medium text-6xl md:text-8xl tracking-tight text-black">
+                ₦78.2M
+              </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 items-end" style={{ height: '240px' }}>
+          {/* Vertical Bar Grid matching screenshot */}
+          <div className="grid grid-cols-4 gap-0 items-end h-[280px] border-b border-gray-200">
             {STATS_BY_YEAR.map((s) => (
-              <div key={s.year} className="flex flex-col justify-end h-full">
+              <div key={s.year} className="flex flex-col justify-end h-full px-1 md:px-2">
                 <div
-                  className="rounded-t-md w-full flex items-start justify-center pt-3 text-sm font-medium transition-all duration-500 hover:scale-105"
+                  className="w-full flex items-start p-3 md:p-4 text-xs md:text-sm font-bold transition-all duration-300 hover:opacity-90 rounded-t-sm"
                   style={{
-                    height: `${(s.value / 50) * 100}%`,
-                    background: s.highlight ? '#A9E24B' : '#F1EFF6',
-                    minHeight: '48px',
-                    color: '#3A3A3A',
+                    height: `${(s.value / 85) * 100}%`,
+                    backgroundColor: s.color,
+                    border: s.border ? '1px solid #E5E7EB' : 'none',
+                    borderBottom: 'none',
+                    color: '#0F0F10',
                   }}
                 >
                   {s.label}
                 </div>
-                <div className="pt-2 text-xs text-center" style={{ borderTop: '1px solid #E5E5E5', color: '#8A8A8A' }}>
+                <div className="py-3 text-[11px] md:text-xs text-gray-500 font-semibold border-t border-gray-200 text-left pl-1">
                   {s.year}
                 </div>
               </div>
@@ -225,238 +251,193 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Opportunities */}
-      <section className="py-16 md:py-20" style={{ background: '#FAFAF9' }}>
+      {/* Why Should You Use Bravevest Section */}
+      <section className="py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h2 className="font-serif font-light text-3xl md:text-4xl">Featured Opportunities</h2>
-              <p className="text-sm mt-2" style={{ color: '#8A8A8A' }}>Curated investments with strong fundamentals</p>
-            </div>
-            <Link to="/opportunities">
-              <button className="text-sm flex items-center gap-1 text-brave-teal hover:underline">
-                View All <ArrowRight className="h-4 w-4" />
-              </button>
-            </Link>
-          </div>
+          <h2 className="font-serif font-medium text-4xl md:text-5xl text-center mb-16 text-black">
+            Why Should You Use
+            <br />
+            BraveVest?
+          </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {opportunities.map((opp, index) => (
-              <div key={index} className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg transition-shadow">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${opp.color} flex items-center justify-center mb-3`}>
-                  <opp.icon className="h-5 w-5 text-white" />
-                </div>
-                <p className="text-xs text-brave-teal font-medium mb-1">{opp.category}</p>
-                <h4 className="font-semibold text-sm mb-2">{opp.title}</h4>
-                <div className="space-y-1 text-xs" style={{ color: '#8A8A8A' }}>
-                  <div className="flex justify-between">
-                    <span>Return</span>
-                    <span className="font-semibold text-brave-teal">{opp.return}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tenure</span>
-                    <span>{opp.tenure}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Min Investment</span>
-                    <span>{opp.minInvestment}</span>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span style={{ color: '#8A8A8A' }}>Funded</span>
-                    <span className="font-medium">{opp.raised}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div
-                      className="bg-brave-teal h-1.5 rounded-full"
-                      style={{ width: opp.raised }}
-                    />
+          <div className="space-y-16">
+            {/* Business Loan Row */}
+            <div className="grid md:grid-cols-12 gap-8 items-center">
+              <div className="md:col-span-6">
+                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-purple-300 via-purple-100 to-green-200 p-8 min-h-[340px] flex items-center justify-center">
+                  <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-xl bg-white">
+                    <div className="overflow-hidden">
+                      <img
+                        src={STOCK_IMAGES.businessLoan}
+                        alt="Business loan consultation between two professionals"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-4 flex items-center justify-between bg-white">
+                      <div>
+                        <p className="text-xs font-extrabold text-black">Business Loan</p>
+                        <p className="text-[10px] text-gray-500 font-medium">Employed &amp; Urgent Financial Needs</p>
+                      </div>
+                      <span className="w-7 h-7 bg-[#B3D941] rounded-lg flex items-center justify-center font-extrabold text-xs">
+                        W
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <Link to={`/opportunities/${index + 1}`}>
-                  <button className="w-full mt-3 text-xs border rounded-full py-1.5 hover:bg-gray-50 transition-colors">
-                    View Details
+              </div>
+              <div className="md:col-span-6 md:pl-8">
+                <span className="text-xs text-gray-500 font-bold block mb-2">Business Loan</span>
+                <h3 className="font-serif font-medium text-3xl md:text-4xl mb-4 leading-tight text-black">
+                  Refreshingly Instant
+                  <br />
+                  Business Loan
+                </h3>
+                <p className="text-sm text-gray-700 font-medium mb-6 max-w-sm leading-relaxed">
+                  We use all our creative might to bring you the best loan, at the best price, just for your needs.
+                </p>
+                <Link to="/register">
+                  <button className="bg-black text-white px-7 py-3 rounded-full text-xs font-bold hover:bg-black/90 transition-colors">
+                    Apply Now
                   </button>
                 </Link>
               </div>
-            ))}
+            </div>
+
+            {/* Personal Loan Row */}
+            <div className="grid md:grid-cols-12 gap-8 items-center">
+              <div className="md:col-span-6 md:order-2">
+                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-green-300 via-green-100 to-emerald-200 p-8 min-h-[340px] flex items-center justify-center">
+                  <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-xl bg-white">
+                    <div className="overflow-hidden">
+                      <img
+                        src={STOCK_IMAGES.personalLoan}
+                        alt="Person reviewing personal finance documents and planning a loan"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-4 flex items-center justify-between bg-white">
+                      <div>
+                        <p className="text-xs font-extrabold text-black">Personal Loan</p>
+                        <p className="text-[10px] text-gray-500 font-medium">Fast Flexible Approvals</p>
+                      </div>
+                      <span className="w-7 h-7 bg-purple-300 rounded-lg flex items-center justify-center font-extrabold text-xs">
+                        P
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="md:col-span-6 md:order-1 md:pr-8">
+                <span className="text-xs text-gray-500 font-bold block mb-2">Personal Loan</span>
+                <h3 className="font-serif font-medium text-3xl md:text-4xl mb-4 leading-tight text-black">
+                  Individual Short Term
+                  <br />
+                  Personal Loan
+                </h3>
+                <p className="text-sm text-gray-700 font-medium mb-6 max-w-sm leading-relaxed">
+                  We provide personal loan based on Credit Score. Get in 5 mins or less.
+                </p>
+                <Link to="/register">
+                  <button className="bg-black text-white px-7 py-3 rounded-full text-xs font-bold hover:bg-black/90 transition-colors">
+                    Apply Now
+                  </button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Why BraveVest — alternating cards */}
-      <section className="py-16 md:py-20">
+      {/* How It Works Section (Interactive Step Accordions from HowItWorksPage) */}
+      <section className="py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <h2 className="font-serif font-light text-3xl md:text-4xl text-center mb-14">
-            Why Invest With BraveVest?
+          <h2 className="font-serif font-medium text-4xl md:text-5xl text-center mb-3 text-black">
+            How It Works?
           </h2>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-8 items-center">
-            <div
-              className="rounded-3xl p-6 flex flex-col justify-between text-white min-h-[18rem]"
-              style={{ background: 'linear-gradient(160deg, #7B5FE0 0%, #C9B8E8 100%)' }}
-            >
-              <span className="bg-white text-black text-xs px-3 py-1 rounded-full w-fit">Property Fund · 4.9</span>
-              <div>
-                <p className="text-sm" style={{ opacity: 0.9 }}>
-                  Vetted real estate opportunities, fractionalized from ₦250,000.
-                </p>
-                <div className="flex gap-2 mt-3">
-                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">Fractional</span>
-                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">Rental Income</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#8A8A8A' }}>Property Investment</p>
-              <h3 className="font-serif text-2xl md:text-3xl mb-3 leading-snug">
-                Own a Share of
-                <br />Verified Real Estate
-              </h3>
-              <p className="text-sm mb-5 max-w-sm" style={{ color: '#5B5B5B' }}>
-                We underwrite every listing and publish the numbers up front, so you know
-                exactly what you're buying into.
-              </p>
-              <Link to="/opportunities">
-                <button className="bg-black text-white px-6 py-2.5 rounded-full text-sm hover:bg-black/90 transition-colors">
-                  Invest Now
-                </button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="order-2 md:order-1">
-              <p className="text-xs mb-2" style={{ color: '#8A8A8A' }}>Income Fund</p>
-              <h3 className="font-serif text-2xl md:text-3xl mb-3 leading-snug">
-                Steady Payouts,
-                <br />Set On Your Schedule
-              </h3>
-              <p className="text-sm mb-5 max-w-sm" style={{ color: '#5B5B5B' }}>
-                Fixed-income opportunities matched to your goals, with monthly or quarterly
-                payout options.
-              </p>
-              <Link to="/opportunities">
-                <button className="bg-black text-white px-6 py-2.5 rounded-full text-sm hover:bg-black/90 transition-colors">
-                  Apply Now
-                </button>
-              </Link>
-            </div>
-            <div
-              className="order-1 md:order-2 rounded-3xl p-6 flex flex-col justify-between text-white min-h-[18rem]"
-              style={{ background: 'linear-gradient(160deg, #4E9F6E 0%, #A9E24B 100%)' }}
-            >
-              <span className="bg-white text-black text-xs px-3 py-1 rounded-full w-fit">Income Fund · 4.8</span>
-              <div>
-                <p className="text-sm" style={{ opacity: 0.9 }}>
-                  Earn from 12% projected annual returns, paid out on schedule.
-                </p>
-                <div className="flex gap-2 mt-3">
-                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">Monthly Payouts</span>
-                  <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">Low Risk</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-16 md:py-20" style={{ background: '#FAFAF9' }}>
-        <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <h2 className="font-serif font-light text-3xl md:text-4xl text-center mb-3">How It Works</h2>
-          <p className="text-center text-sm mb-12 max-w-md mx-auto" style={{ color: '#8A8A8A' }}>
-            Getting started takes minutes — verify once, then invest at your own pace.
+          <p className="text-center text-xs text-gray-500 font-semibold max-w-sm mx-auto mb-16 leading-relaxed">
+            There are plenty of loan providers, loan products and the competition for new customers is fierce.
           </p>
-          <div className="grid md:grid-cols-3 gap-5">
-            <div className="rounded-2xl p-7 text-white transition-transform hover:-translate-y-1" style={{ background: '#2AA9A0' }}>
-              <p className="text-xs mb-8" style={{ opacity: 0.8 }}>Step 1</p>
-              <PenLine className="w-6 h-6 mb-4" />
-              <h3 className="font-serif text-xl mb-2">Verify Your Details</h3>
-              <p className="text-sm" style={{ opacity: 0.9 }}>Complete KYC once — securely, in a few minutes.</p>
-            </div>
-            <div className="rounded-2xl p-7 text-white transition-transform hover:-translate-y-1" style={{ background: '#8B5FBF' }}>
-              <p className="text-xs mb-8" style={{ opacity: 0.8 }}>Step 2</p>
-              <Search className="w-6 h-6 mb-4" />
-              <h3 className="font-serif text-xl mb-2">Find the Right Opportunity</h3>
-              <p className="text-sm" style={{ opacity: 0.9 }}>Filter by product, return, and time horizon.</p>
-            </div>
-            <div className="rounded-2xl p-7 transition-transform hover:-translate-y-1" style={{ background: '#A9E24B', color: '#1A1A1A' }}>
-              <p className="text-xs mb-8" style={{ opacity: 0.7 }}>Step 3</p>
-              <Wallet className="w-6 h-6 mb-4" />
-              <h3 className="font-serif text-xl mb-2">Get Paid Out</h3>
-              <p className="text-sm" style={{ opacity: 0.8 }}>Track returns and receive payouts on schedule.</p>
-            </div>
+
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            {STEPS.map((stepItem) => {
+              const Icon = stepItem.icon;
+              const isExpanded = expandedStep === stepItem.step;
+
+              return (
+                <div
+                  key={stepItem.step}
+                  onClick={() => toggleStep(stepItem.step)}
+                  className={`${stepItem.bgColor} ${stepItem.textColor} rounded-3xl p-8 flex flex-col justify-between shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 ${
+                    isExpanded ? 'min-h-[380px] ring-2 ring-black/20' : 'h-80'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-8">
+                      <div className={`w-9 h-9 ${stepItem.accentColor} rounded-xl flex items-center justify-center`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] tracking-wider uppercase opacity-75 font-bold">
+                        Step {stepItem.step}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif font-medium text-2xl leading-snug whitespace-pre-line mb-3">
+                      {stepItem.title}
+                    </h3>
+
+                    <p className="text-[11px] opacity-85 font-medium leading-relaxed">
+                      {stepItem.shortDesc}
+                    </p>
+                  </div>
+
+                  {/* Expandable Details Section */}
+                  {isExpanded ? (
+                    <div className="mt-4 pt-4 border-t border-current/20 space-y-2 animate-fade-in text-xs font-medium opacity-90">
+                      <p className="font-bold text-[11px]">Key details:</p>
+                      {stepItem.details.map((detail, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-[11px]">
+                          <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-[11px] font-bold mt-4 opacity-75 hover:opacity-100">
+                      <span>Click to see details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Trust Signals */}
-      <section className="py-12 border-b border-gray-100">
+      {/* Trust & Security Bar (Adopted from HowItWorksPage) */}
+      <section className="py-10 border-t border-gray-100 bg-gray-50/60">
         <div className="max-w-6xl mx-auto px-6 md:px-10">
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center items-center gap-8 text-xs font-bold text-gray-600">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-brave-teal" />
-              <span>SEC Compliant</span>
+              <ShieldCheck className="h-4 w-4 text-black" />
+              <span>SEC Licensed</span>
             </div>
             <div className="flex items-center gap-2">
-              <FileCheck2 className="h-5 w-5 text-brave-teal" />
-              <span>Verified Listings</span>
+              <Lock className="h-4 w-4 text-black" />
+              <span>256-bit Encryption</span>
             </div>
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-brave-teal" />
-              <span>10,000+ Investors</span>
+              <Users className="h-4 w-4 text-black" />
+              <span>10,000+ Active Investors</span>
             </div>
             <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-brave-teal" />
+              <Award className="h-4 w-4 text-black" />
               <span>4.8★ Rating</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-brave-teal" />
-              <span>Pan-African</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-brave-teal" />
-              <span>24/7 Support</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 md:py-20 bg-black text-white text-center">
-        <div className="max-w-3xl mx-auto px-6 md:px-10">
-          <h2 className="font-serif font-light text-3xl md:text-4xl mb-4">Ready to Grow Your Wealth?</h2>
-          <p className="mb-8 max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            Join thousands of investors building their financial future with BraveVest.
-            Start with as little as ₦10,000.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/register">
-              <button className="bg-white text-black px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
-                Create Free Account
-              </button>
-            </Link>
-            <Link to="/opportunities">
-              <button className="border border-white/30 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-white/10 transition-colors">
-                Browse Opportunities
-              </button>
-            </Link>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 mt-6 text-xs text-white/40">
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-brave-lime" />
-              No hidden fees
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-brave-lime" />
-              SEC regulated
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-brave-lime" />
-              Withdraw anytime
-            </span>
           </div>
         </div>
       </section>

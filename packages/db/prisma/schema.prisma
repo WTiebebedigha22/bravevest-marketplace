@@ -5,11 +5,11 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model User {
   id                       String   @id @default(cuid())
+  firebaseUid              String?  @unique
   email                    String   @unique
   phone                    String   @unique
   passwordHash             String
@@ -63,8 +63,106 @@ model User {
   wallets                  Wallet[]
   subscriptions            Subscription[]
   auditLogs                AuditLog[]
+  kycDocuments             KycDocument[]
+  loanApplications         LoanApplication[]
+  opportunities            Opportunity[]
   
   @@map("users")
+}
+
+model KycDocument {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  type        KycDocumentType
+  storageKey  String
+  status      KycDocumentStatus  @default(pending)
+  reviewNote  String?
+  expiresAt   DateTime?
+  reviewedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId, status])
+  @@map("kyc_documents")
+}
+
+model LoanApplication {
+  id              String                @id @default(cuid())
+  borrowerId      String
+  borrower        User                  @relation(fields: [borrowerId], references: [id])
+  requestedAmount Float
+  purpose         String
+  businessSummary String?
+  status          LoanApplicationStatus @default(draft)
+  reviewNote      String?
+  reviewedAt      DateTime?
+  opportunity     Opportunity?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([borrowerId, status])
+  @@map("loan_applications")
+}
+
+model Opportunity {
+  id                 String               @id @default(cuid())
+  sponsorId          String
+  sponsor            User                 @relation(fields: [sponsorId], references: [id])
+  loanApplicationId  String?              @unique
+  loanApplication    LoanApplication?    @relation(fields: [loanApplicationId], references: [id])
+  title              String
+  description        String?
+  targetRaise        Float
+  fundedAmount       Float                @default(0)
+  unitPrice          Float
+  totalUnits         Int
+  minInvestment      Float
+  maxInvestment      Float?
+  tenureMonths       Int
+  interestRate       Float
+  projectedReturnPct Float
+  riskRating         RiskRating
+  status             OpportunityStatus   @default(draft)
+  fundingDeadline    DateTime?
+  maturityDate       DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  documents          OpportunityDocument[]
+  subscriptions      Subscription[]
+  repayments         Repayment[]
+
+  @@index([status, riskRating])
+  @@map("opportunities")
+}
+
+model OpportunityDocument {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
+  type          String
+  storageKey    String
+  createdAt     DateTime    @default(now())
+
+  @@map("opportunity_documents")
+}
+
+model Repayment {
+  id              String          @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity     @relation(fields: [opportunityId], references: [id])
+  installmentNo   Int
+  dueDate         DateTime
+  principalAmount Float
+  interestAmount  Float
+  amountPaid      Float           @default(0)
+  status          RepaymentStatus @default(scheduled)
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([opportunityId, installmentNo])
+  @@map("repayments")
 }
 
 model Wallet {
@@ -101,6 +199,7 @@ model Subscription {
   investorId        String
   investor          User     @relation(fields: [investorId], references: [id])
   opportunityId     String
+  opportunity       Opportunity @relation(fields: [opportunityId], references: [id])
   units             Int
   amount            Float
   status            SubscriptionStatus @default(pending)
@@ -177,4 +276,53 @@ enum PayoutStatus {
   scheduled
   paid
   failed
+}
+
+enum KycDocumentType {
+  identity
+  proof_of_address
+  tax_document
+  accreditation
+  business_registration
+}
+
+enum KycDocumentStatus {
+  pending
+  approved
+  rejected
+  expired
+}
+
+enum LoanApplicationStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+  converted
+}
+
+enum OpportunityStatus {
+  draft
+  under_review
+  listed
+  funding
+  funded
+  active
+  completed
+  defaulted
+}
+
+enum RiskRating {
+  low
+  medium
+  high
+}
+
+enum RepaymentStatus {
+  scheduled
+  processing
+  paid
+  late
+  defaulted
 }
